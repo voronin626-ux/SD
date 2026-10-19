@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import {
   Plus,
   LogOut,
@@ -115,26 +114,17 @@ export default function Dashboard({ user, tickets, onCreateTicket, onLogout }: D
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Welcome Section */}
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="mb-8"
-        >
+        <div className="mb-8 animate-fade-in">
           <h2 className="text-2xl font-bold text-gray-800">
             Добро пожаловать, {user.fullName}! 👋
           </h2>
           <p className="text-gray-500 mt-1">
             Здесь вы можете отслеживать свои обращения и создавать новые заявки
           </p>
-        </motion.div>
+        </div>
 
         {/* Stats Cards */}
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-          className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8"
-        >
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8 animate-fade-in-up" style={{ animationDelay: '0.1s' }}>
           <div className="bg-white rounded-xl p-4 border border-gray-100 shadow-sm">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 bg-blue-50 rounded-xl flex items-center justify-center">
@@ -179,18 +169,13 @@ export default function Dashboard({ user, tickets, onCreateTicket, onLogout }: D
               </div>
             </div>
           </div>
-        </motion.div>
+        </div>
 
         {/* Action Bar */}
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-          className="flex flex-col sm:flex-row gap-4 mb-6"
-        >
+        <div className="flex flex-col sm:flex-row gap-4 mb-6 animate-fade-in-up" style={{ animationDelay: '0.2s' }}>
           <button
             onClick={() => setIsNewTicketOpen(true)}
-            className="flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-500 to-indigo-600 text-white font-medium rounded-xl hover:from-blue-600 hover:to-indigo-700 transition-all shadow-lg shadow-blue-200 hover:shadow-xl hover:shadow-blue-200"
+            className="flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-500 to-indigo-600 text-white font-medium rounded-xl hover:from-blue-600 hover:to-indigo-700 transition-all shadow-lg shadow-blue-200 hover:shadow-xl hover:shadow-blue-200 hover:-translate-y-0.5"
           >
             <Plus className="w-5 h-5" />
             Новая заявка
@@ -222,15 +207,10 @@ export default function Dashboard({ user, tickets, onCreateTicket, onLogout }: D
               </select>
             </div>
           </div>
-        </motion.div>
+        </div>
 
         {/* Tickets List */}
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
-          className="space-y-3"
-        >
+        <div className="space-y-3 animate-fade-in-up" style={{ animationDelay: '0.3s' }}>
           {filteredTickets.length === 0 ? (
             <div className="bg-white rounded-2xl border border-gray-100 p-12 text-center">
               <div className="w-16 h-16 bg-gray-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
@@ -246,60 +226,54 @@ export default function Dashboard({ user, tickets, onCreateTicket, onLogout }: D
               </p>
             </div>
           ) : (
-            <AnimatePresence>
-              {filteredTickets.map((ticket, index) => {
-                const status = statusConfig[ticket.status];
-                const StatusIcon = status.icon;
-                return (
-                  <motion.div
-                    key={ticket.id}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, x: -20 }}
-                    transition={{ delay: index * 0.05 }}
-                    className="bg-white rounded-xl border border-gray-100 p-5 hover:shadow-md hover:border-gray-200 transition-all cursor-pointer group"
-                  >
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1.5">
-                          <span className="text-xs font-mono text-gray-400">#{ticket.id}</span>
-                          <span
-                            className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium border ${status.color}`}
-                          >
-                            <StatusIcon className="w-3 h-3" />
-                            {status.label}
-                          </span>
-                        </div>
-                        <h3 className="text-base font-semibold text-gray-800 group-hover:text-blue-600 transition-colors truncate">
-                          {ticket.subject}
-                        </h3>
-                        <p className="text-sm text-gray-500 mt-1 line-clamp-2">
-                          {ticket.description}
-                        </p>
-                        <div className="flex items-center gap-4 mt-3">
-                          <span className="flex items-center gap-1.5 text-xs text-gray-400">
-                            <MapPin className="w-3.5 h-3.5" />
-                            {locationLabels[ticket.location] || ticket.location}
-                          </span>
-                          <span className="flex items-center gap-1.5 text-xs text-gray-400">
-                            <Clock className="w-3.5 h-3.5" />
-                            {new Date(ticket.createdAt).toLocaleDateString('ru-RU', {
-                              day: 'numeric',
-                              month: 'short',
-                              year: 'numeric',
-                              hour: '2-digit',
-                              minute: '2-digit',
-                            })}
-                          </span>
-                        </div>
+            filteredTickets.map((ticket) => {
+              const status = statusConfig[ticket.status];
+              const StatusIcon = status.icon;
+              return (
+                <div
+                  key={ticket.id}
+                  className="bg-white rounded-xl border border-gray-100 p-5 hover:shadow-md hover:border-gray-200 transition-all cursor-pointer group"
+                >
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1.5">
+                        <span className="text-xs font-mono text-gray-400">#{ticket.id}</span>
+                        <span
+                          className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium border ${status.color}`}
+                        >
+                          <StatusIcon className="w-3 h-3" />
+                          {status.label}
+                        </span>
+                      </div>
+                      <h3 className="text-base font-semibold text-gray-800 group-hover:text-blue-600 transition-colors truncate">
+                        {ticket.subject}
+                      </h3>
+                      <p className="text-sm text-gray-500 mt-1 line-clamp-2">
+                        {ticket.description}
+                      </p>
+                      <div className="flex items-center gap-4 mt-3">
+                        <span className="flex items-center gap-1.5 text-xs text-gray-400">
+                          <MapPin className="w-3.5 h-3.5" />
+                          {locationLabels[ticket.location] || ticket.location}
+                        </span>
+                        <span className="flex items-center gap-1.5 text-xs text-gray-400">
+                          <Clock className="w-3.5 h-3.5" />
+                          {new Date(ticket.createdAt).toLocaleDateString('ru-RU', {
+                            day: 'numeric',
+                            month: 'short',
+                            year: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit',
+                          })}
+                        </span>
                       </div>
                     </div>
-                  </motion.div>
-                );
-              })}
-            </AnimatePresence>
+                  </div>
+                </div>
+              );
+            })
           )}
-        </motion.div>
+        </div>
       </main>
 
       {/* New Ticket Modal */}

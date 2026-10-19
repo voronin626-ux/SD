@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { motion } from 'framer-motion';
 import { Lock, User, Shield } from 'lucide-react';
 import { User as UserType } from '../types';
 
@@ -52,12 +51,7 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
         <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-purple-200 rounded-full opacity-20 blur-3xl"></div>
       </div>
 
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-        className="w-full max-w-md relative"
-      >
+      <div className="w-full max-w-md relative animate-fade-in">
         <div className="bg-white rounded-2xl shadow-xl p-8 border border-gray-100">
           {/* Логотип и заголовок */}
           <div className="text-center mb-8">
@@ -109,13 +103,9 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
             </div>
 
             {error && (
-              <motion.div
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl text-sm"
-              >
+              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl text-sm animate-shake">
                 {error}
-              </motion.div>
+              </div>
             )}
 
             <button
@@ -145,7 +135,7 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
             </p>
           </div>
         </div>
-      </motion.div>
+      </div>
     </div>
   );
 }
