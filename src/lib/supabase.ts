@@ -1,6 +1,23 @@
-import { createClient } from '@supabase/supabase-js';
+import { createClient, SupabaseClient } from '@supabase/supabase-js';
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'YOUR_SUPABASE_URL';
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'YOUR_SUPABASE_ANON_KEY';
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+// Проверяем, настроена ли база данных
+export const isDatabaseConfigured = (): boolean => {
+  return Boolean(
+    supabaseUrl &&
+    supabaseAnonKey &&
+    supabaseUrl.startsWith('http') &&
+    !supabaseUrl.includes('YOUR_')
+  );
+};
+
+// Создаем клиент только если БД настроена
+let supabaseInstance: SupabaseClient | null = null;
+
+if (isDatabaseConfigured()) {
+  supabaseInstance = createClient(supabaseUrl, supabaseAnonKey);
+}
+
+export const supabase = supabaseInstance;

@@ -1,5 +1,43 @@
-import { supabase } from '../lib/supabase';
+import { supabase, isDatabaseConfigured } from '../lib/supabase';
 import { User, Ticket, TicketType, Priority, TicketStatus } from '../types';
+
+// ============================================
+// Fallback: Работа с localStorage
+// ============================================
+
+const STORAGE_KEYS = {
+  EMPLOYEES: 'sd_employees',
+  TICKETS: 'sd_tickets',
+  TICKET_COUNTER: 'sd_ticket_counter',
+};
+
+// Сотрудники (localStorage)
+function getEmployeesFromStorage(): User[] {
+  const data = localStorage.getItem(STORAGE_KEYS.EMPLOYEES);
+  return data ? JSON.parse(data) : [];
+}
+
+function saveEmployeesToStorage(employees: User[]): void {
+  localStorage.setItem(STORAGE_KEYS.EMPLOYEES, JSON.stringify(employees));
+}
+
+// Заявки (localStorage)
+function getTicketsFromStorage(): Ticket[] {
+  const data = localStorage.getItem(STORAGE_KEYS.TICKETS);
+  return data ? JSON.parse(data) : [];
+}
+
+function saveTicketsToStorage(tickets: Ticket[]): void {
+  localStorage.setItem(STORAGE_KEYS.TICKETS, JSON.stringify(tickets));
+}
+
+// Генерация номера заявки (localStorage)
+function generateTicketNumberFromStorage(): string {
+  const counter = parseInt(localStorage.getItem(STORAGE_KEYS.TICKET_COUNTER) || '0', 10);
+  const newCounter = counter + 1;
+  localStorage.setItem(STORAGE_KEYS.TICKET_COUNTER, newCounter.toString());
+  return `SD-${String(newCounter).padStart(5, '0')}`;
+}
 
 // ============================================
 // Сотрудники
@@ -9,6 +47,12 @@ import { User, Ticket, TicketType, Priority, TicketStatus } from '../types';
  * Найти сотрудника по логину (username)
  */
 export async function findEmployeeByUsername(username: string): Promise<User | null> {
+  if (!isDatabaseConfigured() || !supabase) {
+    // Fallback: localStorage
+    const employees = getEmployeesFromStorage();
+    return employees.find(e => e.username === username.toLowerCase()) || null;
+  }
+
   const { data, error } = await supabase
     .from('employees')
     .select('*')
@@ -36,6 +80,21 @@ export async function createEmployee(
   fullName: string,
   department: string = 'Отдел ИТ'
 ): Promise<User | null> {
+  if (!isDatabaseConfigured() || !supabase) {
+    // Fallback: localStorage
+    const employees = getEmployeesFromStorage();
+    const newEmployee: User = {
+      id: crypto.randomUUID(),
+      username: username.toLowerCase(),
+      fullName,
+      department,
+      role: 'user',
+    };
+    employees.push(newEmployee);
+    saveEmployeesToStorage(employees);
+    return newEmployee;
+  }
+
   const { data, error } = await supabase
     .from('employees')
     .insert({
@@ -67,6 +126,11 @@ export async function createEmployee(
  * Обновить время последнего входа
  */
 export async function updateLastLogin(employeeId: string): Promise<void> {
+  if (!isDatabaseConfigured() || !supabase) {
+    // Fallback: localStorage (не отслеживаем последний вход)
+    return;
+  }
+
   await supabase
     .from('employees')
     .update({ last_login_at: new Date().toISOString() })
@@ -97,6 +161,17 @@ export async function getOrCreateEmployee(
  * Получить всех инженеров
  */
 export async function getEngineers(): Promise<User[]> {
+  if (!isDatabaseConfigured() || !supabase) {
+    // Fallback: возвращаем захардкоженных инженеров
+    return [
+      { id: '1', username: 'voronin.d', fullName: 'Воронин Денис', department: 'ИТ', role: 'engineer' },
+      { id: '2', username: 'ivanov.i', fullName: 'Иванов Иван', department: 'ИТ', role: 'engineer' },
+      { id: '3', username: 'petrov.s', fullName: 'Петров Сергей', department: 'ИТ', role: 'engineer' },
+      { id: '4', username: 'sidorova.a', fullName: 'Сидорова Анна', department: 'ИТ', role: 'engineer' },
+      { id: '5', username: 'kozlov.m', fullName: 'Козлов Михаил', department: 'ИТ', role: 'engineer' },
+    ];
+  }
+
   const { data, error } = await supabase
     .from('employees')
     .select('*')
@@ -108,7 +183,7 @@ export async function getEngineers(): Promise<User[]> {
     return [];
   }
 
-  return (data || []).map((d) => ({
+  return (data || []).map((d: any) => ({
     id: d.id,
     username: d.username,
     fullName: d.full_name,
@@ -139,6 +214,33 @@ interface CreateTicketData {
  * Создать новую заявку
  */
 export async function createTicket(ticketData: CreateTicketData): Promise<Ticket | null> {
+  if (!isDatabaseConfigured() || !supabase) {
+    // Fallback: localStorage
+    const tickets = getTicketsFromStorage();
+    const ticketNumber = generateTicketNumberFromStorage();
+    
+    const newTicket: Ticket = {
+      id: crypto.randomUUID(),
+      ticketNumber,
+      type: ticketData.type,
+      subject: ticketData.subject,
+      description: ticketData.description,
+      priority: ticketData.priority,
+      status: 'new',
+      location: ticketData.location,
+      category: ticketData.category,
+      engineer: ticketData.engineer,
+      deadline: ticketData.deadline,
+      createdBy: ticketData.createdById,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    
+    tickets.unshift(newTicket);
+    saveTicketsToStorage(tickets);
+    return newTicket;
+  }
+
   // Генерируем номер заявки
   const ticketNumber = await generateTicketNumber();
 
@@ -175,6 +277,11 @@ export async function createTicket(ticketData: CreateTicketData): Promise<Ticket
  * Получить все заявки (отсортированные по дате)
  */
 export async function getTickets(): Promise<Ticket[]> {
+  if (!isDatabaseConfigured() || !supabase) {
+    // Fallback: localStorage
+    return getTicketsFromStorage();
+  }
+
   const { data, error } = await supabase
     .from('tickets')
     .select('*')
@@ -192,6 +299,12 @@ export async function getTickets(): Promise<Ticket[]> {
  * Получить заявки конкретного пользователя
  */
 export async function getTicketsByUser(userId: string): Promise<Ticket[]> {
+  if (!isDatabaseConfigured() || !supabase) {
+    // Fallback: localStorage
+    const tickets = getTicketsFromStorage();
+    return tickets.filter(t => t.createdBy === userId);
+  }
+
   const { data, error } = await supabase
     .from('tickets')
     .select('*')
@@ -214,6 +327,18 @@ export async function updateTicketStatus(
   status: TicketStatus,
   changedBy: string
 ): Promise<boolean> {
+  if (!isDatabaseConfigured() || !supabase) {
+    // Fallback: localStorage
+    const tickets = getTicketsFromStorage();
+    const ticketIndex = tickets.findIndex(t => t.id === ticketId);
+    if (ticketIndex === -1) return false;
+    
+    tickets[ticketIndex].status = status;
+    tickets[ticketIndex].updatedAt = new Date().toISOString();
+    saveTicketsToStorage(tickets);
+    return true;
+  }
+
   const { error } = await supabase
     .from('tickets')
     .update({ status })
@@ -236,6 +361,10 @@ export async function updateTicketStatus(
  * Генерация номера заявки (SD-00001)
  */
 async function generateTicketNumber(): Promise<string> {
+  if (!supabase) {
+    return generateTicketNumberFromStorage();
+  }
+
   const { data, error } = await supabase
     .from('tickets')
     .select('ticket_number')
@@ -259,6 +388,11 @@ async function addTicketHistory(
   action: string,
   changedBy: string
 ): Promise<void> {
+  if (!isDatabaseConfigured() || !supabase) {
+    // Fallback: не ведем историю в localStorage
+    return;
+  }
+
   await supabase.from('ticket_history').insert({
     ticket_id: ticketId,
     action,

@@ -1,15 +1,18 @@
 import { useState, useEffect } from 'react';
 import { User, Ticket, Priority } from './types';
 import { getOrCreateEmployee, getTickets, createTicket } from './services/database';
+import { isDatabaseConfigured } from './lib/supabase';
 import LoginPage from './components/LoginPage';
 import Dashboard from './components/Dashboard';
+import { DatabaseStatusBadge } from './components/DatabaseStatusBadge';
+import { DatabaseInfoPanel } from './components/DatabaseInfoPanel';
 
 function App() {
   const [user, setUser] = useState<User | null>(null);
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Загрузка пользователя из localStorage и заявок из БД
+  // Загрузка пользователя из localStorage и заявок из БД/localStorage
   useEffect(() => {
     const initApp = async () => {
       const savedUser = localStorage.getItem('sd_user');
@@ -17,7 +20,7 @@ function App() {
         const parsedUser = JSON.parse(savedUser);
         setUser(parsedUser);
         
-        // Загружаем заявки из БД
+        // Загружаем заявки из БД или localStorage
         const dbTickets = await getTickets();
         setTickets(dbTickets);
       }
@@ -34,7 +37,7 @@ function App() {
       return false;
     }
 
-    // Получаем или создаём сотрудника в БД
+    // Получаем или создаём сотрудника в БД/localStorage
     const employee = await getOrCreateEmployee(
       username,
       username.charAt(0).toUpperCase() + username.slice(1),
@@ -45,7 +48,7 @@ function App() {
       setUser(employee);
       localStorage.setItem('sd_user', JSON.stringify(employee));
       
-      // Загружаем заявки из БД
+      // Загружаем заявки из БД или localStorage
       const dbTickets = await getTickets();
       setTickets(dbTickets);
       
@@ -96,16 +99,26 @@ function App() {
   }
 
   if (!user) {
-    return <LoginPage onLogin={handleLogin} />;
+    return (
+      <>
+        <LoginPage onLogin={handleLogin} />
+        <DatabaseStatusBadge />
+        <DatabaseInfoPanel />
+      </>
+    );
   }
 
   return (
-    <Dashboard
-      user={user}
-      tickets={tickets}
-      onCreateTicket={handleCreateTicket}
-      onLogout={handleLogout}
-    />
+    <>
+      <Dashboard
+        user={user}
+        tickets={tickets}
+        onCreateTicket={handleCreateTicket}
+        onLogout={handleLogout}
+      />
+      <DatabaseStatusBadge />
+      <DatabaseInfoPanel />
+    </>
   );
 }
 
