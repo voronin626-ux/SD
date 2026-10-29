@@ -2,21 +2,37 @@ import { useState } from 'react';
 import {
   Plus,
   LogOut,
-  Ticket,
+  Ticket as TicketIcon,
   Clock,
   CheckCircle2,
   AlertCircle,
   MapPin,
   Search,
   Filter,
+  User,
+  Tag,
+  Zap,
+  Calendar,
+  ArrowDownCircle,
+  MinusCircle,
+  ArrowUpCircle,
 } from 'lucide-react';
-import { User, Ticket as TicketType } from '../types';
+import { User as UserType, Ticket as TicketType, Priority } from '../types';
 import NewTicketModal from './NewTicketModal';
 
 interface DashboardProps {
-  user: User;
+  user: UserType;
   tickets: TicketType[];
-  onCreateTicket: (ticket: { subject: string; description: string; location: string }) => void;
+  onCreateTicket: (ticket: {
+    type: 'incident' | 'request';
+    subject: string;
+    description: string;
+    priority: Priority;
+    engineer: string;
+    location: string;
+    category: string;
+    deadline?: string;
+  }) => void;
   onLogout: () => void;
 }
 
@@ -25,33 +41,36 @@ const statusConfig = {
     label: 'Новая',
     icon: AlertCircle,
     color: 'bg-blue-100 text-blue-700 border-blue-200',
-    dot: 'bg-blue-500',
   },
   in_progress: {
     label: 'В работе',
     icon: Clock,
     color: 'bg-amber-100 text-amber-700 border-amber-200',
-    dot: 'bg-amber-500',
   },
   resolved: {
     label: 'Решена',
     icon: CheckCircle2,
     color: 'bg-green-100 text-green-700 border-green-200',
-    dot: 'bg-green-500',
   },
   closed: {
     label: 'Закрыта',
     icon: CheckCircle2,
     color: 'bg-gray-100 text-gray-600 border-gray-200',
-    dot: 'bg-gray-400',
   },
 };
 
+const priorityConfig: Record<Priority, { label: string; icon: typeof Zap; color: string; bgColor: string }> = {
+  low: { label: 'Низкий', icon: ArrowDownCircle, color: 'text-green-600', bgColor: 'bg-green-50' },
+  medium: { label: 'Средний', icon: MinusCircle, color: 'text-blue-600', bgColor: 'bg-blue-50' },
+  high: { label: 'Высокий', icon: ArrowUpCircle, color: 'text-orange-600', bgColor: 'bg-orange-50' },
+  critical: { label: 'Критический', icon: Zap, color: 'text-red-600', bgColor: 'bg-red-50' },
+};
+
 const locationLabels: Record<string, string> = {
-  'МОФ': 'Московский офис',
-  'РОП': 'Ростовский офис',
-  'ЗОП': 'Зональный офис',
-  'КОП': 'Корпоративный офис',
+  'МОФ': 'МОФ',
+  'РОП': 'РОП',
+  'ЗОП': 'ЗОП',
+  'КОП': 'КОП',
 };
 
 export default function Dashboard({ user, tickets, onCreateTicket, onLogout }: DashboardProps) {
@@ -63,7 +82,8 @@ export default function Dashboard({ user, tickets, onCreateTicket, onLogout }: D
     const matchesSearch =
       ticket.subject.toLowerCase().includes(searchQuery.toLowerCase()) ||
       ticket.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      ticket.id.toLowerCase().includes(searchQuery.toLowerCase());
+      ticket.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      ticket.category.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesStatus = filterStatus === 'all' || ticket.status === filterStatus;
     return matchesSearch && matchesStatus;
   });
@@ -83,7 +103,7 @@ export default function Dashboard({ user, tickets, onCreateTicket, onLogout }: D
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center gap-3">
               <div className="w-9 h-9 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center shadow-md">
-                <Ticket className="w-5 h-5 text-white" />
+                <TicketIcon className="w-5 h-5 text-white" />
               </div>
               <div>
                 <h1 className="text-lg font-bold text-gray-800">Service Desk</h1>
@@ -128,7 +148,7 @@ export default function Dashboard({ user, tickets, onCreateTicket, onLogout }: D
           <div className="bg-white rounded-xl p-4 border border-gray-100 shadow-sm">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 bg-blue-50 rounded-xl flex items-center justify-center">
-                <Ticket className="w-5 h-5 text-blue-500" />
+                <TicketIcon className="w-5 h-5 text-blue-500" />
               </div>
               <div>
                 <p className="text-2xl font-bold text-gray-800">{stats.total}</p>
@@ -214,7 +234,7 @@ export default function Dashboard({ user, tickets, onCreateTicket, onLogout }: D
           {filteredTickets.length === 0 ? (
             <div className="bg-white rounded-2xl border border-gray-100 p-12 text-center">
               <div className="w-16 h-16 bg-gray-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                <Ticket className="w-8 h-8 text-gray-400" />
+                <TicketIcon className="w-8 h-8 text-gray-400" />
               </div>
               <h3 className="text-lg font-semibold text-gray-700 mb-1">
                 {tickets.length === 0 ? 'Заявок пока нет' : 'Ничего не найдено'}
@@ -229,6 +249,8 @@ export default function Dashboard({ user, tickets, onCreateTicket, onLogout }: D
             filteredTickets.map((ticket) => {
               const status = statusConfig[ticket.status];
               const StatusIcon = status.icon;
+              const priority = priorityConfig[ticket.priority];
+              const PriorityIcon = priority.icon;
               return (
                 <div
                   key={ticket.id}
@@ -236,13 +258,20 @@ export default function Dashboard({ user, tickets, onCreateTicket, onLogout }: D
                 >
                   <div className="flex items-start justify-between gap-4">
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1.5">
+                      <div className="flex items-center gap-2 mb-1.5 flex-wrap">
                         <span className="text-xs font-mono text-gray-400">#{ticket.id}</span>
                         <span
                           className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium border ${status.color}`}
                         >
                           <StatusIcon className="w-3 h-3" />
                           {status.label}
+                        </span>
+                        <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${priority.bgColor} ${priority.color}`}>
+                          <PriorityIcon className="w-3 h-3" />
+                          {priority.label}
+                        </span>
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-purple-50 text-purple-700">
+                          {ticket.type === 'incident' ? '🔴 Инцидент' : '🔵 Запрос'}
                         </span>
                       </div>
                       <h3 className="text-base font-semibold text-gray-800 group-hover:text-blue-600 transition-colors truncate">
@@ -251,17 +280,30 @@ export default function Dashboard({ user, tickets, onCreateTicket, onLogout }: D
                       <p className="text-sm text-gray-500 mt-1 line-clamp-2">
                         {ticket.description}
                       </p>
-                      <div className="flex items-center gap-4 mt-3">
-                        <span className="flex items-center gap-1.5 text-xs text-gray-400">
+                      <div className="flex items-center gap-4 mt-3 flex-wrap">
+                        <span className="flex items-center gap-1.5 text-xs text-gray-500">
                           <MapPin className="w-3.5 h-3.5" />
                           {locationLabels[ticket.location] || ticket.location}
                         </span>
+                        <span className="flex items-center gap-1.5 text-xs text-gray-500">
+                          <Tag className="w-3.5 h-3.5" />
+                          {ticket.category}
+                        </span>
+                        <span className="flex items-center gap-1.5 text-xs text-gray-500">
+                          <User className="w-3.5 h-3.5" />
+                          {ticket.engineer}
+                        </span>
+                        {ticket.deadline && (
+                          <span className="flex items-center gap-1.5 text-xs text-amber-600">
+                            <Calendar className="w-3.5 h-3.5" />
+                            до {new Date(ticket.deadline).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' })}
+                          </span>
+                        )}
                         <span className="flex items-center gap-1.5 text-xs text-gray-400">
                           <Clock className="w-3.5 h-3.5" />
                           {new Date(ticket.createdAt).toLocaleDateString('ru-RU', {
                             day: 'numeric',
                             month: 'short',
-                            year: 'numeric',
                             hour: '2-digit',
                             minute: '2-digit',
                           })}

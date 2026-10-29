@@ -37,12 +37,26 @@ function App() {
     setUser(null);
   };
 
-  const handleCreateTicket = (ticketData: { subject: string; description: string; location: string }) => {
+  const handleCreateTicket = (ticketData: {
+    type: 'incident' | 'request';
+    subject: string;
+    description: string;
+    priority: 'low' | 'medium' | 'high' | 'critical';
+    engineer: string;
+    location: string;
+    category: string;
+    deadline?: string;
+  }) => {
     const newTicket: Ticket = {
       id: uuidv4().split('-')[0].toUpperCase(),
+      type: ticketData.type,
       subject: ticketData.subject,
       description: ticketData.description,
+      priority: ticketData.priority,
+      engineer: ticketData.engineer,
       location: ticketData.location,
+      category: ticketData.category,
+      deadline: ticketData.deadline,
       status: 'new',
       createdBy: user?.fullName || '',
       createdAt: new Date().toISOString(),
