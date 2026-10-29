@@ -253,7 +253,31 @@ export async function createTicket(ticketData: CreateTicketData): Promise<Ticket
 
 export async function getTickets(): Promise<Ticket[]> {
   if (!isDatabaseConfigured() || !supabase) {
-    return getTicketsFromStorage();
+    const tickets = getTicketsFromStorage();
+    
+    // Миграция: добавляем createdByName для старых заявок
+    const employees = getEmployeesFromStorage();
+    let needsUpdate = false;
+    
+    const updatedTickets = tickets.map(ticket => {
+      if (!ticket.createdByName && ticket.createdBy) {
+        const employee = employees.find(e => e.id === ticket.createdBy);
+        if (employee) {
+          needsUpdate = true;
+          return {
+            ...ticket,
+            createdByName: employee.fullName,
+          };
+        }
+      }
+      return ticket;
+    });
+    
+    if (needsUpdate) {
+      saveTicketsToStorage(updatedTickets);
+    }
+    
+    return updatedTickets;
   }
 
   const { data, error } = await supabase
@@ -269,7 +293,19 @@ export async function getTickets(): Promise<Ticket[]> {
 export async function getTicketById(ticketId: string): Promise<Ticket | null> {
   if (!isDatabaseConfigured() || !supabase) {
     const tickets = getTicketsFromStorage();
-    return tickets.find(t => t.id === ticketId) || null;
+    const ticket = tickets.find(t => t.id === ticketId);
+    
+    // Миграция: добавляем createdByName для старых заявок
+    if (ticket && !ticket.createdByName && ticket.createdBy) {
+      const employees = getEmployeesFromStorage();
+      const employee = employees.find(e => e.id === ticket.createdBy);
+      if (employee) {
+        ticket.createdByName = employee.fullName;
+        saveTicketsToStorage(tickets);
+      }
+    }
+    
+    return ticket || null;
   }
 
   const { data, error } = await supabase
