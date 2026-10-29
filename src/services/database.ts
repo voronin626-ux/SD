@@ -50,7 +50,15 @@ export async function findEmployeeByUsername(username: string): Promise<User | n
   if (!isDatabaseConfigured() || !supabase) {
     // Fallback: localStorage
     const employees = getEmployeesFromStorage();
-    return employees.find(e => e.username === username.toLowerCase()) || null;
+    const employee = employees.find(e => e.username === username.toLowerCase());
+    
+    // Миграция: если у сотрудника нет ID, добавляем его
+    if (employee && !employee.id) {
+      employee.id = crypto.randomUUID();
+      saveEmployeesToStorage(employees);
+    }
+    
+    return employee || null;
   }
 
   const { data, error } = await supabase

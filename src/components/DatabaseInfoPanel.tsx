@@ -146,6 +146,27 @@ VITE_SUPABASE_ANON_KEY=ваш-anon-ключ`}
                     <code className="bg-blue-100 px-2 py-0.5 rounded text-xs">DATABASE_SETUP.md</code>
                   </p>
                 </div>
+
+                <div className="bg-red-50 border border-red-200 rounded-xl p-4">
+                  <p className="text-sm text-red-800 mb-3">
+                    <strong>⚠️ Очистка данных:</strong> Если заявки не отображаются, очистите локальные данные:
+                  </p>
+                  <button
+                    onClick={() => {
+                      if (confirm('Вы уверены? Все локальные данные будут удалены.')) {
+                        localStorage.removeItem('sd_employees');
+                        localStorage.removeItem('sd_tickets');
+                        localStorage.removeItem('sd_ticket_counter');
+                        localStorage.removeItem('sd_user');
+                        alert('Данные очищены. Перезагрузите страницу.');
+                        window.location.reload();
+                      }
+                    }}
+                    className="w-full py-2 px-4 bg-red-500 hover:bg-red-600 text-white font-medium rounded-lg transition-colors text-sm"
+                  >
+                    Очистить все данные
+                  </button>
+                </div>
               </div>
 
               {/* Footer */}

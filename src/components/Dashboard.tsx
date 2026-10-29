@@ -88,6 +88,8 @@ export default function Dashboard({ user, tickets, onCreateTicket, onLogout }: D
     return matchesSearch && matchesStatus;
   });
 
+  console.log('Dashboard - всего заявок:', tickets.length, 'отфильтровано:', filteredTickets.length);
+
   const stats = {
     total: tickets.length,
     new: tickets.filter((t) => t.status === 'new').length,

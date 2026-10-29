@@ -44,9 +44,35 @@ function App() {
       'Отдел ИТ'
     );
 
+    console.log('Сотрудник после входа:', employee);
+
     if (employee) {
-      setUser(employee);
-      localStorage.setItem('sd_user', JSON.stringify(employee));
+      // Проверяем, что у сотрудника есть ID
+      if (!employee.id) {
+        console.error('Ошибка: у сотрудника нет ID, пересоздаём...');
+        // Удаляем старого сотрудника и создаём нового
+        const employees = JSON.parse(localStorage.getItem('sd_employees') || '[]');
+        const filtered = employees.filter((e: any) => e.username !== username.toLowerCase());
+        localStorage.setItem('sd_employees', JSON.stringify(filtered));
+        
+        // Создаём заново
+        const newEmployee = await getOrCreateEmployee(
+          username,
+          username.charAt(0).toUpperCase() + username.slice(1),
+          'Отдел ИТ'
+        );
+        
+        if (newEmployee && newEmployee.id) {
+          setUser(newEmployee);
+          localStorage.setItem('sd_user', JSON.stringify(newEmployee));
+        } else {
+          console.error('Не удалось создать сотрудника с ID');
+          return false;
+        }
+      } else {
+        setUser(employee);
+        localStorage.setItem('sd_user', JSON.stringify(employee));
+      }
       
       // Загружаем заявки из БД или localStorage
       const dbTickets = await getTickets();
@@ -74,16 +100,34 @@ function App() {
     category: string;
     deadline?: string;
   }) => {
-    if (!user?.id) return;
+    console.log('Создание заявки, пользователь:', user);
+    
+    if (!user?.id) {
+      console.error('Ошибка: у пользователя нет ID', user);
+      alert('Ошибка: не удалось определить пользователя. Попробуйте выйти и войти снова.');
+      return;
+    }
 
     const newTicket = await createTicket({
       ...ticketData,
       createdById: user.id,
     });
 
+    console.log('Созданная заявка:', newTicket);
+
     if (newTicket) {
       // Добавляем заявку в начало списка
-      setTickets((prev) => [newTicket, ...prev]);
+      setTickets((prev) => {
+        const updated = [newTicket, ...prev];
+        console.log('Обновлённый список заявок:', updated);
+        return updated;
+      });
+      
+      // Показываем уведомление
+      alert(`✅ Заявка ${newTicket.ticketNumber} успешно создана!`);
+    } else {
+      console.error('Ошибка: заявка не была создана');
+      alert('❌ Ошибка при создании заявки. Проверьте консоль для подробностей.');
     }
   };
 
