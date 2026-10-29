@@ -31,7 +31,7 @@ interface NewTicketModalProps {
     category: string;
     deadline?: string;
   }) => void;
-  username: string;
+  userName: string;
 }
 
 const locations: { value: Location; label: string; description: string }[] = [
@@ -72,7 +72,7 @@ const ticketTypes: { value: TicketType; label: string; description: string; icon
   { value: 'request', label: 'Запрос услуги', description: 'нужна помощь или консультация', icon: MessageSquare, color: 'from-blue-500 to-indigo-500' },
 ];
 
-export default function NewTicketModal({ isOpen, onClose, onSubmit, username }: NewTicketModalProps) {
+export default function NewTicketModal({ isOpen, onClose, onSubmit, userName }: NewTicketModalProps) {
   const [type, setType] = useState<TicketType>('incident');
   const [subject, setSubject] = useState('');
   const [description, setDescription] = useState('');
@@ -413,11 +413,11 @@ export default function NewTicketModal({ isOpen, onClose, onSubmit, username }: 
             <div className="bg-blue-50 rounded-xl p-4 flex items-center gap-3">
               <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
                 <span className="text-blue-600 font-semibold text-sm">
-                  {username.charAt(0).toUpperCase()}
+                  {userName.charAt(0).toUpperCase()}
                 </span>
               </div>
               <div>
-                <p className="text-sm font-medium text-gray-700">{username}</p>
+                <p className="text-sm font-medium text-gray-700">{userName}</p>
                 <p className="text-xs text-gray-500">Заявка будет создана от вашего имени</p>
               </div>
             </div>

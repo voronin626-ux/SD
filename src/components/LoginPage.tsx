@@ -1,9 +1,8 @@
 import { useState } from 'react';
 import { Lock, User, Shield } from 'lucide-react';
-import { User as UserType } from '../types';
 
 interface LoginPageProps {
-  onLogin: (user: UserType) => void;
+  onLogin: (username: string, password: string) => Promise<boolean>;
 }
 
 export default function LoginPage({ onLogin }: LoginPageProps) {
@@ -24,19 +23,11 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
     setIsLoading(true);
 
     // Имитация запроса к Active Directory
-    // В реальном приложении здесь будет API-запрос к серверу,
-    // который проверяет учётные данные через LDAP/AD
-    await new Promise(resolve => setTimeout(resolve, 1200));
+    await new Promise(resolve => setTimeout(resolve, 800));
 
-    // Для демонстрации принимаем любые учётные данные
-    // В продакшене здесь будет реальная проверка через AD
-    if (username && password) {
-      onLogin({
-        username: username,
-        fullName: username.charAt(0).toUpperCase() + username.slice(1),
-        department: 'Отдел ИТ',
-      });
-    } else {
+    const success = await onLogin(username, password);
+
+    if (!success) {
       setError('Неверный логин или пароль');
     }
 

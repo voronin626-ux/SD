@@ -82,7 +82,7 @@ export default function Dashboard({ user, tickets, onCreateTicket, onLogout }: D
     const matchesSearch =
       ticket.subject.toLowerCase().includes(searchQuery.toLowerCase()) ||
       ticket.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      ticket.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (ticket.ticketNumber && ticket.ticketNumber.toLowerCase().includes(searchQuery.toLowerCase())) ||
       ticket.category.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesStatus = filterStatus === 'all' || ticket.status === filterStatus;
     return matchesSearch && matchesStatus;
@@ -253,13 +253,13 @@ export default function Dashboard({ user, tickets, onCreateTicket, onLogout }: D
               const PriorityIcon = priority.icon;
               return (
                 <div
-                  key={ticket.id}
+                  key={ticket.id || ticket.ticketNumber}
                   className="bg-white rounded-xl border border-gray-100 p-5 hover:shadow-md hover:border-gray-200 transition-all cursor-pointer group"
                 >
                   <div className="flex items-start justify-between gap-4">
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1.5 flex-wrap">
-                        <span className="text-xs font-mono text-gray-400">#{ticket.id}</span>
+                        <span className="text-xs font-mono text-gray-400">#{ticket.ticketNumber || ticket.id}</span>
                         <span
                           className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium border ${status.color}`}
                         >
@@ -301,12 +301,12 @@ export default function Dashboard({ user, tickets, onCreateTicket, onLogout }: D
                         )}
                         <span className="flex items-center gap-1.5 text-xs text-gray-400">
                           <Clock className="w-3.5 h-3.5" />
-                          {new Date(ticket.createdAt).toLocaleDateString('ru-RU', {
+                          {ticket.createdAt ? new Date(ticket.createdAt).toLocaleDateString('ru-RU', {
                             day: 'numeric',
                             month: 'short',
                             hour: '2-digit',
                             minute: '2-digit',
-                          })}
+                          }) : '—'}
                         </span>
                       </div>
                     </div>
@@ -326,7 +326,7 @@ export default function Dashboard({ user, tickets, onCreateTicket, onLogout }: D
           onCreateTicket(ticket);
           setIsNewTicketOpen(false);
         }}
-        username={user.fullName}
+        userName={user.fullName}
       />
     </div>
   );

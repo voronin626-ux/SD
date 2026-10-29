@@ -1,68 +1,99 @@
 import { useState, useEffect } from 'react';
-import { v4 as uuidv4 } from 'uuid';
-import { User, Ticket } from './types';
+import { User, Ticket, Priority } from './types';
+import { getOrCreateEmployee, getTickets, createTicket } from './services/database';
 import LoginPage from './components/LoginPage';
 import Dashboard from './components/Dashboard';
 
 function App() {
   const [user, setUser] = useState<User | null>(null);
   const [tickets, setTickets] = useState<Ticket[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  // Загрузка из localStorage
+  // Загрузка пользователя из localStorage и заявок из БД
   useEffect(() => {
-    const savedUser = localStorage.getItem('sd_user');
-    const savedTickets = localStorage.getItem('sd_tickets');
-    if (savedUser) setUser(JSON.parse(savedUser));
-    if (savedTickets) setTickets(JSON.parse(savedTickets));
+    const initApp = async () => {
+      const savedUser = localStorage.getItem('sd_user');
+      if (savedUser) {
+        const parsedUser = JSON.parse(savedUser);
+        setUser(parsedUser);
+        
+        // Загружаем заявки из БД
+        const dbTickets = await getTickets();
+        setTickets(dbTickets);
+      }
+      setLoading(false);
+    };
+
+    initApp();
   }, []);
 
-  // Сохранение в localStorage
-  useEffect(() => {
-    if (user) {
-      localStorage.setItem('sd_user', JSON.stringify(user));
-    } else {
-      localStorage.removeItem('sd_user');
+  const handleLogin = async (username: string, password: string): Promise<boolean> => {
+    // Здесь должна быть реальная проверка через Active Directory
+    // Для демонстрации принимаем любые учётные данные
+    if (!username || !password) {
+      return false;
     }
-  }, [user]);
 
-  useEffect(() => {
-    localStorage.setItem('sd_tickets', JSON.stringify(tickets));
-  }, [tickets]);
+    // Получаем или создаём сотрудника в БД
+    const employee = await getOrCreateEmployee(
+      username,
+      username.charAt(0).toUpperCase() + username.slice(1),
+      'Отдел ИТ'
+    );
 
-  const handleLogin = (loggedInUser: User) => {
-    setUser(loggedInUser);
+    if (employee) {
+      setUser(employee);
+      localStorage.setItem('sd_user', JSON.stringify(employee));
+      
+      // Загружаем заявки из БД
+      const dbTickets = await getTickets();
+      setTickets(dbTickets);
+      
+      return true;
+    }
+
+    return false;
   };
 
   const handleLogout = () => {
     setUser(null);
+    setTickets([]);
+    localStorage.removeItem('sd_user');
   };
 
-  const handleCreateTicket = (ticketData: {
+  const handleCreateTicket = async (ticketData: {
     type: 'incident' | 'request';
     subject: string;
     description: string;
-    priority: 'low' | 'medium' | 'high' | 'critical';
+    priority: Priority;
     engineer: string;
     location: string;
     category: string;
     deadline?: string;
   }) => {
-    const newTicket: Ticket = {
-      id: uuidv4().split('-')[0].toUpperCase(),
-      type: ticketData.type,
-      subject: ticketData.subject,
-      description: ticketData.description,
-      priority: ticketData.priority,
-      engineer: ticketData.engineer,
-      location: ticketData.location,
-      category: ticketData.category,
-      deadline: ticketData.deadline,
-      status: 'new',
-      createdBy: user?.fullName || '',
-      createdAt: new Date().toISOString(),
-    };
-    setTickets((prev) => [newTicket, ...prev]);
+    if (!user?.id) return;
+
+    const newTicket = await createTicket({
+      ...ticketData,
+      createdById: user.id,
+    });
+
+    if (newTicket) {
+      // Добавляем заявку в начало списка
+      setTickets((prev) => [newTicket, ...prev]);
+    }
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
+          <p className="text-gray-600">Загрузка...</p>
+        </div>
+      </div>
+    );
+  }
 
   if (!user) {
     return <LoginPage onLogin={handleLogin} />;
