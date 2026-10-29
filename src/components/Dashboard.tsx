@@ -17,6 +17,7 @@ import {
   MinusCircle,
   ArrowUpCircle,
   MessageSquare,
+  Wrench,
 } from 'lucide-react';
 import { User as UserType, Ticket as TicketType, Priority, TicketStatus, Attachment } from '../types';
 import NewTicketModal from './NewTicketModal';
@@ -37,6 +38,7 @@ interface DashboardProps {
   }) => void;
   onAddComment: (ticketId: string, text: string, attachments: Attachment[]) => Promise<void>;
   onUpdateStatus: (ticketId: string, status: TicketStatus) => Promise<void>;
+  onUpdateEngineer?: (ticketId: string, engineer: string) => Promise<void>;
   onLogout: () => void;
 }
 
@@ -77,7 +79,7 @@ const locationLabels: Record<string, string> = {
   'КОП': 'КОП',
 };
 
-export default function Dashboard({ user, tickets, onCreateTicket, onAddComment, onUpdateStatus, onLogout }: DashboardProps) {
+export default function Dashboard({ user, tickets, onCreateTicket, onAddComment, onUpdateStatus, onUpdateEngineer, onLogout }: DashboardProps) {
   const [isNewTicketOpen, setIsNewTicketOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState<string>('all');
@@ -134,7 +136,15 @@ export default function Dashboard({ user, tickets, onCreateTicket, onAddComment,
                     {user.fullName.charAt(0).toUpperCase()}
                   </span>
                 </div>
-                <span className="text-sm font-medium text-gray-700">{user.fullName}</span>
+                <div className="flex flex-col">
+                  <span className="text-sm font-medium text-gray-700">{user.fullName}</span>
+                  {user.role === 'engineer' && (
+                    <span className="text-xs text-purple-600 font-medium flex items-center gap-1">
+                      <Wrench className="w-3 h-3" />
+                      Инженер
+                    </span>
+                  )}
+                </div>
               </div>
               <button
                 onClick={onLogout}
@@ -360,7 +370,8 @@ export default function Dashboard({ user, tickets, onCreateTicket, onAddComment,
         onClose={() => setSelectedTicket(null)}
         onAddComment={onAddComment}
         onUpdateStatus={onUpdateStatus}
-        currentUser={{ id: user.id || '', fullName: user.fullName }}
+        onUpdateEngineer={onUpdateEngineer}
+        currentUser={{ id: user.id || '', fullName: user.fullName, role: user.role }}
       />
     </div>
   );

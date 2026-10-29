@@ -15,6 +15,7 @@ import {
   Paperclip,
   Trash2,
   ZoomIn,
+  Wrench,
 } from 'lucide-react';
 import { Ticket, Comment, Attachment, Priority, TicketStatus } from '../types';
 
@@ -24,7 +25,8 @@ interface TicketDetailModalProps {
   onClose: () => void;
   onAddComment: (ticketId: string, text: string, attachments: Attachment[]) => Promise<void>;
   onUpdateStatus: (ticketId: string, status: TicketStatus) => Promise<void>;
-  currentUser: { id: string; fullName: string };
+  onUpdateEngineer?: (ticketId: string, engineer: string) => Promise<void>;
+  currentUser: { id: string; fullName: string; role?: string };
 }
 
 const priorityConfig: Record<Priority, { label: string; color: string; bgColor: string }> = {
@@ -56,8 +58,10 @@ export default function TicketDetailModal({
   onClose,
   onAddComment,
   onUpdateStatus,
+  onUpdateEngineer,
   currentUser,
 }: TicketDetailModalProps) {
+  const isEngineer = currentUser.role === 'engineer';
   const [commentText, setCommentText] = useState('');
   const [attachments, setAttachments] = useState<Attachment[]>([]);
   const [visible, setVisible] = useState(false);
@@ -397,6 +401,57 @@ export default function TicketDetailModal({
 
               {/* Sidebar Info */}
               <div className="p-6 space-y-4 bg-gray-50/50">
+                {/* Панель инженера */}
+                {isEngineer && (
+                  <div className="bg-gradient-to-br from-purple-50 to-indigo-50 rounded-xl p-4 border border-purple-100 mb-4">
+                    <h3 className="text-sm font-semibold text-purple-900 mb-3 flex items-center gap-2">
+                      <Wrench className="w-4 h-4" />
+                      Панель инженера
+                    </h3>
+                    <div className="space-y-2">
+                      <button
+                        onClick={() => {
+                          if (ticket?.id) {
+                            onUpdateStatus(ticket.id, 'in_progress');
+                            if (onUpdateEngineer) {
+                              onUpdateEngineer(ticket.id, currentUser.fullName);
+                            }
+                          }
+                        }}
+                        disabled={ticket?.status === 'in_progress'}
+                        className="w-full py-2 px-3 bg-amber-500 hover:bg-amber-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-white rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2"
+                      >
+                        <Clock className="w-4 h-4" />
+                        Взять в работу
+                      </button>
+                      <button
+                        onClick={() => {
+                          if (ticket?.id) {
+                            onUpdateStatus(ticket.id, 'resolved');
+                          }
+                        }}
+                        disabled={ticket?.status === 'resolved' || ticket?.status === 'closed'}
+                        className="w-full py-2 px-3 bg-green-500 hover:bg-green-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-white rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2"
+                      >
+                        <CheckCircle2 className="w-4 h-4" />
+                        Решить проблему
+                      </button>
+                      <button
+                        onClick={() => {
+                          if (ticket?.id) {
+                            onUpdateStatus(ticket.id, 'closed');
+                          }
+                        }}
+                        disabled={ticket?.status === 'closed'}
+                        className="w-full py-2 px-3 bg-gray-500 hover:bg-gray-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-white rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2"
+                      >
+                        <X className="w-4 h-4" />
+                        Закрыть заявку
+                      </button>
+                    </div>
+                  </div>
+                )}
+
                 <h3 className="text-sm font-semibold text-gray-700 mb-3">Информация</h3>
 
                 {/* Статус */}

@@ -118,11 +118,28 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
             </button>
           </form>
 
-          {/* Подсказка */}
+          {/* Демо-инженеры */}
           <div className="mt-6 pt-5 border-t border-gray-100">
-            <p className="text-xs text-gray-400 text-center">
-              Используйте учётные данные корпоративной почты<br />
-              для входа в систему Active Directory
+            <p className="text-xs text-gray-500 text-center mb-3 font-medium">
+              🔧 Учётные записи инженеров (демо):
+            </p>
+            <div className="bg-blue-50 rounded-lg p-3 space-y-1.5 text-xs">
+              <div className="flex justify-between items-center">
+                <code className="text-blue-700 font-mono">voronin.d</code>
+                <span className="text-gray-600">Воронин Денис</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <code className="text-blue-700 font-mono">ivanov.i</code>
+                <span className="text-gray-600">Иванов Иван</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <code className="text-blue-700 font-mono">petrov.s</code>
+                <span className="text-gray-600">Петров Сергей</span>
+              </div>
+            </div>
+            <p className="text-xs text-gray-400 text-center mt-3">
+              Пароль: <code className="bg-gray-100 px-1.5 py-0.5 rounded">engineer123</code><br />
+              Или используйте любые другие данные для входа как пользователь
             </p>
           </div>
         </div>

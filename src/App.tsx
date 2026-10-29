@@ -7,14 +7,37 @@ import Dashboard from './components/Dashboard';
 import { DatabaseStatusBadge } from './components/DatabaseStatusBadge';
 import { DatabaseInfoPanel } from './components/DatabaseInfoPanel';
 
+// Предустановленные инженеры для демо
+const DEFAULT_ENGINEERS = [
+  { username: 'voronin.d', fullName: 'Воронин Денис', department: 'Отдел ИТ', role: 'engineer' as const },
+  { username: 'ivanov.i', fullName: 'Иванов Иван', department: 'Отдел ИТ', role: 'engineer' as const },
+  { username: 'petrov.s', fullName: 'Петров Сергей', department: 'Отдел ИТ', role: 'engineer' as const },
+  { username: 'sidorova.a', fullName: 'Сидорова Анна', department: 'Отдел ИТ', role: 'engineer' as const },
+  { username: 'kozlov.m', fullName: 'Козлов Михаил', department: 'Отдел ИТ', role: 'engineer' as const },
+];
+
 function App() {
   const [user, setUser] = useState<User | null>(null);
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Загрузка пользователя из localStorage и заявок из БД/localStorage
+  // Инициализация приложения
   useEffect(() => {
     const initApp = async () => {
+      // Предзаполняем инженеров в localStorage при первом запуске
+      const existingEmployees = JSON.parse(localStorage.getItem('sd_employees') || '[]');
+      const hasEngineers = existingEmployees.some((e: User) => e.role === 'engineer');
+      
+      if (!hasEngineers) {
+        // Добавляем инженеров, если их нет
+        const engineersWithIds = DEFAULT_ENGINEERS.map(eng => ({
+          ...eng,
+          id: crypto.randomUUID(),
+        }));
+        const allEmployees = [...existingEmployees, ...engineersWithIds];
+        localStorage.setItem('sd_employees', JSON.stringify(allEmployees));
+      }
+
       const savedUser = localStorage.getItem('sd_user');
       if (savedUser) {
         const parsedUser = JSON.parse(savedUser);
@@ -37,12 +60,45 @@ function App() {
       return false;
     }
 
+    // Проверяем, является ли пользователь инженером
+    const isEngineer = DEFAULT_ENGINEERS.some(
+      eng => eng.username === username.toLowerCase()
+    );
+
+    let fullName = username.charAt(0).toUpperCase() + username.slice(1);
+    let role: 'user' | 'engineer' | 'admin' = 'user';
+    let department = 'Отдел ИТ';
+
+    if (isEngineer) {
+      // Находим инженера в списке
+      const engineer = DEFAULT_ENGINEERS.find(
+        eng => eng.username === username.toLowerCase()
+      );
+      if (engineer) {
+        fullName = engineer.fullName;
+        role = 'engineer';
+        department = engineer.department;
+      }
+    }
+
     // Получаем или создаём сотрудника в БД/localStorage
     const employee = await getOrCreateEmployee(
       username,
-      username.charAt(0).toUpperCase() + username.slice(1),
-      'Отдел ИТ'
+      fullName,
+      department
     );
+
+    // Обновляем роль, если это инженер
+    if (employee && isEngineer && employee.role !== 'engineer') {
+      employee.role = 'engineer';
+      // Сохраняем обновлённого сотрудника
+      const employees = JSON.parse(localStorage.getItem('sd_employees') || '[]');
+      const index = employees.findIndex((e: User) => e.username === username.toLowerCase());
+      if (index !== -1) {
+        employees[index] = { ...employees[index], role: 'engineer', fullName };
+        localStorage.setItem('sd_employees', JSON.stringify(employees));
+      }
+    }
 
     console.log('Сотрудник после входа:', employee);
 
@@ -133,6 +189,22 @@ function App() {
     }
   };
 
+  const handleUpdateEngineer = async (ticketId: string, engineer: string) => {
+    // Обновляем инженера в заявке
+    setTickets((prev) => 
+      prev.map((t) => {
+        if (t.id === ticketId) {
+          return {
+            ...t,
+            engineer,
+            updatedAt: new Date().toISOString(),
+          };
+        }
+        return t;
+      })
+    );
+  };
+
   const handleCreateTicket = async (ticketData: {
     type: 'incident' | 'request';
     subject: string;
@@ -204,6 +276,7 @@ function App() {
         onCreateTicket={handleCreateTicket}
         onAddComment={handleAddComment}
         onUpdateStatus={handleUpdateStatus}
+        onUpdateEngineer={handleUpdateEngineer}
         onLogout={handleLogout}
       />
       <DatabaseStatusBadge />
