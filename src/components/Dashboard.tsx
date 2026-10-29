@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Plus,
   LogOut,
@@ -16,9 +16,11 @@ import {
   ArrowDownCircle,
   MinusCircle,
   ArrowUpCircle,
+  MessageSquare,
 } from 'lucide-react';
-import { User as UserType, Ticket as TicketType, Priority } from '../types';
+import { User as UserType, Ticket as TicketType, Priority, TicketStatus, Attachment } from '../types';
 import NewTicketModal from './NewTicketModal';
+import TicketDetailModal from './TicketDetailModal';
 
 interface DashboardProps {
   user: UserType;
@@ -33,6 +35,8 @@ interface DashboardProps {
     category: string;
     deadline?: string;
   }) => void;
+  onAddComment: (ticketId: string, text: string, attachments: Attachment[]) => Promise<void>;
+  onUpdateStatus: (ticketId: string, status: TicketStatus) => Promise<void>;
   onLogout: () => void;
 }
 
@@ -73,10 +77,11 @@ const locationLabels: Record<string, string> = {
   'КОП': 'КОП',
 };
 
-export default function Dashboard({ user, tickets, onCreateTicket, onLogout }: DashboardProps) {
+export default function Dashboard({ user, tickets, onCreateTicket, onAddComment, onUpdateStatus, onLogout }: DashboardProps) {
   const [isNewTicketOpen, setIsNewTicketOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState<string>('all');
+  const [selectedTicket, setSelectedTicket] = useState<TicketType | null>(null);
 
   const filteredTickets = tickets.filter((ticket) => {
     const matchesSearch =
@@ -87,6 +92,16 @@ export default function Dashboard({ user, tickets, onCreateTicket, onLogout }: D
     const matchesStatus = filterStatus === 'all' || ticket.status === filterStatus;
     return matchesSearch && matchesStatus;
   });
+
+  // Обновляем выбранную заявку при изменении tickets
+  useEffect(() => {
+    if (selectedTicket) {
+      const updated = tickets.find(t => t.id === selectedTicket.id);
+      if (updated) {
+        setSelectedTicket(updated);
+      }
+    }
+  }, [tickets]);
 
   console.log('Dashboard - всего заявок:', tickets.length, 'отфильтровано:', filteredTickets.length);
 
@@ -256,6 +271,7 @@ export default function Dashboard({ user, tickets, onCreateTicket, onLogout }: D
               return (
                 <div
                   key={ticket.id || ticket.ticketNumber}
+                  onClick={() => setSelectedTicket(ticket)}
                   className="bg-white rounded-xl border border-gray-100 p-5 hover:shadow-md hover:border-gray-200 transition-all cursor-pointer group"
                 >
                   <div className="flex items-start justify-between gap-4">
@@ -310,6 +326,12 @@ export default function Dashboard({ user, tickets, onCreateTicket, onLogout }: D
                             minute: '2-digit',
                           }) : '—'}
                         </span>
+                        {(ticket.comments?.length || 0) > 0 && (
+                          <span className="flex items-center gap-1.5 text-xs text-gray-400">
+                            <MessageSquare className="w-3.5 h-3.5" />
+                            {ticket.comments?.length}
+                          </span>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -329,6 +351,16 @@ export default function Dashboard({ user, tickets, onCreateTicket, onLogout }: D
           setIsNewTicketOpen(false);
         }}
         userName={user.fullName}
+      />
+
+      {/* Ticket Detail Modal */}
+      <TicketDetailModal
+        ticket={selectedTicket}
+        isOpen={selectedTicket !== null}
+        onClose={() => setSelectedTicket(null)}
+        onAddComment={onAddComment}
+        onUpdateStatus={onUpdateStatus}
+        currentUser={{ id: user.id || '', fullName: user.fullName }}
       />
     </div>
   );

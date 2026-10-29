@@ -30,6 +30,9 @@ CREATE TABLE IF NOT EXISTS tickets (
   engineer TEXT,
   deadline TIMESTAMPTZ,
   created_by UUID REFERENCES employees(id) ON DELETE SET NULL,
+  created_by_name TEXT,
+  comments JSONB DEFAULT '[]'::jsonb,
+  attachments JSONB DEFAULT '[]'::jsonb,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { User, Ticket, Priority } from './types';
-import { getOrCreateEmployee, getTickets, createTicket } from './services/database';
+import { User, Ticket, Priority, TicketStatus, Attachment } from './types';
+import { getOrCreateEmployee, getTickets, createTicket, addComment, updateTicketStatus } from './services/database';
 import { isDatabaseConfigured } from './lib/supabase';
 import LoginPage from './components/LoginPage';
 import Dashboard from './components/Dashboard';
@@ -90,6 +90,49 @@ function App() {
     localStorage.removeItem('sd_user');
   };
 
+  const handleAddComment = async (ticketId: string, text: string, attachments: Attachment[]) => {
+    if (!user?.id) return;
+
+    const comment = await addComment(ticketId, text, user.id, user.fullName, attachments);
+    
+    if (comment) {
+      // Обновляем заявку в списке
+      setTickets((prev) => 
+        prev.map((t) => {
+          if (t.id === ticketId) {
+            return {
+              ...t,
+              comments: [...(t.comments || []), comment],
+              updatedAt: new Date().toISOString(),
+            };
+          }
+          return t;
+        })
+      );
+    }
+  };
+
+  const handleUpdateStatus = async (ticketId: string, status: TicketStatus) => {
+    if (!user?.id) return;
+
+    const success = await updateTicketStatus(ticketId, status, user.id);
+    
+    if (success) {
+      setTickets((prev) => 
+        prev.map((t) => {
+          if (t.id === ticketId) {
+            return {
+              ...t,
+              status,
+              updatedAt: new Date().toISOString(),
+            };
+          }
+          return t;
+        })
+      );
+    }
+  };
+
   const handleCreateTicket = async (ticketData: {
     type: 'incident' | 'request';
     subject: string;
@@ -111,6 +154,7 @@ function App() {
     const newTicket = await createTicket({
       ...ticketData,
       createdById: user.id,
+      createdByName: user.fullName,
     });
 
     console.log('Созданная заявка:', newTicket);
@@ -158,6 +202,8 @@ function App() {
         user={user}
         tickets={tickets}
         onCreateTicket={handleCreateTicket}
+        onAddComment={handleAddComment}
+        onUpdateStatus={handleUpdateStatus}
         onLogout={handleLogout}
       />
       <DatabaseStatusBadge />
